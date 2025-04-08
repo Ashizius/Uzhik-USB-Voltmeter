@@ -1,13 +1,11 @@
-
-from collections import deque
 import json
 
 
 class SettingsReader():
     def __init__(self):
-        self._channelSettingsFile = './config/channels.json'
-        self._portsFile = './config/ports.json'
-        self._plotSettingsFile = './config/plotSettings.json'
+        self._channelSettingsFile = 'config/channels.json'
+        self._portsFile = 'config/ports.json'
+        self._plotSettingsFile = 'config/plotSettings.json'
 
     def _writeJson(self, data, fileName):
         try:

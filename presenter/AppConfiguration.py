@@ -2,7 +2,7 @@
 from typing import Literal, TypedDict
 
 from model.Model import Model
-from presenter.SettingsReader import SettingsReader
+from file_handler.SettingsReader import SettingsReader
 
 
 class TChannelSettings(TypedDict):
@@ -41,7 +41,6 @@ class AppConfiguration():
 
     def getDefaults(self):
         fullList = self.getFullDevicesList().items()
-        print(fullList)
         for (deviceIndex, channels) in fullList:
             device: dict[str, TChannelSettings] = dict()
             for channelIndex in channels:
@@ -120,7 +119,6 @@ class AppConfiguration():
         self.dataSize = dataSize
 
     def getSelectedPorts(self, cb=None):
-        print(self._selectedPorts)
         if cb == None:
             return self._selectedPorts
         else:
@@ -128,7 +126,6 @@ class AppConfiguration():
 
     def setSelectedPorts(self, ports: list[str]):
         self._selectedPorts = ports
-        print(self._selectedPorts)
 
     def setSelectedDevice(self, deviceIndex, channelIndex, enabled):
         selectedChannels = self._selectedChannels.get(deviceIndex, set())

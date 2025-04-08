@@ -133,8 +133,6 @@ class AppInterface:
             self._time_last_update = perf_counter()
 
     def _onResize(self, size):
-        print(self.monitorWindow.isStop)
-        print(size)
         if self.monitorWindow.isStop:
             return
         self.monitorWindow.startButton.config(state=tk.DISABLED)

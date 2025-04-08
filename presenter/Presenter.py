@@ -1,9 +1,10 @@
 import time
+from file_handler.DataSaver import DataSaver
 from model.Device import Com
-from presenter.AppConfiguration import AppConfiguration
-from appInterface.AppInterface import AppInterface, TSettingsList
+from presenter.AppConfiguration import AppConfiguration, TSettingsList
+from appInterface.AppInterface import AppInterface
 from model.Model import Model
-from presenter.SettingsReader import SettingsReader
+from file_handler.SettingsReader import SettingsReader
 
 
 class Presenter():
@@ -21,6 +22,8 @@ class Presenter():
         interface = AppInterface(name)
         self.dataSize = config.dataSize
         self.interval = config.interval
+
+        self.dataSaver = DataSaver()
 
         # self.plotter:Plotter|None = None
         self.interface = interface
@@ -45,13 +48,20 @@ class Presenter():
         print('!init time:', (self._current_update-self._last_update)*1000)
         self.interface.setupWindow.hide()
         self.interface.monitorWindow.hide()
-        return self.interface.start()
+        try:
+            self.interface.start()
+        except KeyboardInterrupt:
+            print('Exited by Keyboard Interrupt')
+            self.interface.destroy()
+            self.destroy()
+            quit(0)
 
     def _trySelfStart(self):
         self.interface.addWarning('загружаем настройки', 'info', 1000)
         if not self.config.isLoaded('ports'):
             self.interface.addWarning(
                 'не найден файл со списком портов', 'warning', 3000)
+            self.interface.setupWindow.show()
             return
         isChecked = self.setupPorts()
         if not isChecked:
@@ -68,7 +78,7 @@ class Presenter():
         self.setupChannels()
         self.config.updateSelectedDevices(callback=self.model.setMultiplier)
 
-        self.setupPlotter()
+        #self.setupPlotter()
         self.interface.addWarning('всё успешно загружено', 'info', 1000)
         self.interface.startCalling()
         self.interface.addWarning('открыт монитор', 'flood', 1000)
@@ -87,7 +97,6 @@ class Presenter():
             if portName in self.config.allPortsNames:
                 portList.append(portName)
                 selectedPorts.append(portId)
-        print('!!!selected ports', selectedPorts)
         self.config.setSelectedPorts(selectedPorts)
         if len(selectedPorts) == 0:
             return False
@@ -108,6 +117,9 @@ class Presenter():
     def setupPlotter(self):
         (xlim, ylim) = self.config.getLimits()
         self.interface.plotInit(xlim, ylim, xLabel='s', yLabel='V')
+    def setupSaver(self):
+        (xlim, ylim) = self.config.getLimits()
+        self.dataSaver.initSave(xlim, ylim, xLabel='s', yLabel='V')        
 
     def setupChannels(self):
         self.config.loadChannelsSettings()
@@ -140,8 +152,9 @@ class Presenter():
 
     def _reader(self, stop=False, restart=False):
         if restart:
-            print('restart')
+            print('start')
             self.setupPlotter()
+            self.setupSaver()
 
         if stop:
             print('stop')
@@ -149,15 +162,20 @@ class Presenter():
         isData = self.model.readData()
         if not isData:
             return
+        updater = self.interface.plotGetUpdater()
+        saveUpdater = self.dataSaver.getUpdater()
         for deviceIndex in self.config.getSelectedDevices():
-            updater = self.interface.plotGetUpdater()
             draw = updater(deviceIndex, interval=self.config.interval)
+            storeChannel = saveUpdater(deviceIndex, interval=self.config.interval)
             for channelIndex in self.config.getSelectedChannels(deviceIndex):
 
                 (data, pointer, totalPointer) = self.model.getData(
                     deviceIndex, channelIndex)
-                draw(channelIndex, data, lineLabel=str(channelIndex))
+                lineLabel='channel ' + str(channelIndex)
+                storeChannel(channelIndex, data,pointer=pointer, lineLabel=lineLabel)
+                draw(channelIndex, data, lineLabel=lineLabel)
         self.interface.plotPrint()
+        self.dataSaver.save()
 
     def _monitorLoadCallback(self):
         self.config.loadChannelsSettings()
@@ -166,10 +184,10 @@ class Presenter():
         self.config.setDeviceSettings(
             deviceIndex, channelIndex, multiplier, enabled)
         if enabled:
-            print(deviceIndex, channelIndex, multiplier)
             self.model.setMultiplier(deviceIndex, channelIndex, multiplier)
         return self.enableChannels
 
     def destroy(self):
         self.model.close()
-        print('ports closed')
+        self.dataSaver.destroy()
+        

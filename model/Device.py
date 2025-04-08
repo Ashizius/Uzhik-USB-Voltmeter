@@ -44,7 +44,6 @@ class Com(Device):
         if (comsInfo == None):
             return
         com = None
-        # print(comsInfo)
         for comport in (comsInfo):
             comName = comport['name']
             isChosen = True

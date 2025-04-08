@@ -1,8 +1,3 @@
-from collections import deque
-import serial
-import serial.tools.list_ports as listPorts
-from typing import TypedDict
-
 from model.ComData import AroundQueue
 from model.Device import Com
 
@@ -26,7 +21,7 @@ class Model:
         ports = self.devices.listAllPorts()
         self._ports = ports
         names = list()
-        print('Ports', ports)
+        print('All Ports:', ports)
         for port in ports:
             names.append(port['name'])
         return (ports, names)
@@ -138,3 +133,4 @@ class Model:
 
     def close(self):
         self.devices.closeDevices()
+        print('ports closed')

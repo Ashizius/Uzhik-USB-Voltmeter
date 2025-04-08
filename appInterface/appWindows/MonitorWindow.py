@@ -2,7 +2,7 @@
 
 import tkinter as tk
 
-from appInterface.appWindows.Plotter import Plotter
+from appInterface.Plotter import Plotter
 from appInterface.appWindows.Window import Window
 
 class MonitorWindow(Window):
